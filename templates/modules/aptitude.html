@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">Aptitude Preparation Module</h2>
+            <p class="text-muted mb-0">Track Quantitative, Logical Reasoning, and Verbal Ability practice performance.</p>
+        </div>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm align-self-start"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Logging Form Column -->
+    <div class="col-lg-4">
+        <div class="card border-0 p-4 shadow-sm mb-4">
+            <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-plus-circle-fill text-info me-2"></i>Log Today's Preparation</h5>
+            <p class="small text-muted mb-3">Record your practice questions and test results. Focus on maintaining high accuracy!</p>
+            
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.quant_questions.label(class="form-label") }}
+                    {{ form.quant_questions(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.logical_questions.label(class="form-label") }}
+                    {{ form.logical_questions(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.verbal_questions.label(class="form-label") }}
+                    {{ form.verbal_questions(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.accuracy_percentage.label(class="form-label") }}
+                    {{ form.accuracy_percentage(class="form-control") }}
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.mock_test_score.label(class="form-label") }}
+                    {{ form.mock_test_score(class="form-control") }}
+                </div>
+                
+                {{ form.submit(class="btn btn-primary w-100 py-2.5") }}
+            </form>
+        </div>
+    </div>
+    
+    <!-- Analytics Column -->
+    <div class="col-lg-8">
+        <!-- Highlights Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Total Solved</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-info">
+                        {% if latest %}
+                            {{ latest.quant_questions + latest.logical_questions + latest.verbal_questions }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </h3>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Avg Accuracy</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-success">{{ latest.accuracy_percentage if latest else 0.0 }}%</h3>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Mock Test Score</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-primary">{{ latest.mock_test_score if latest else 0.0 }}%</h3>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 p-3 shadow-sm h-100">
+                    <h6 class="font-outfit fw-bold mb-3">Accuracy Trend</h6>
+                    <div class="chart-container" style="position: relative; height: 200px;">
+                        <canvas id="accuracyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 p-3 shadow-sm h-100">
+                    <h6 class="font-outfit fw-bold mb-3">Mock Test Performance</h6>
+                    <div class="chart-container" style="position: relative; height: 200px;">
+                        <canvas id="mockChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Table -->
+        <div class="card border-0 p-4 shadow-sm">
+            <h5 class="font-outfit fw-bold mb-3">Activity Logs History</h5>
+            <div class="table-responsive" style="max-height: 250px;">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Quant</th>
+                            <th>Logical</th>
+                            <th>Verbal</th>
+                            <th>Accuracy</th>
+                            <th>Mock Test</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in history | reverse %}
+                        <tr>
+                            <td>{{ log.date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ log.quant_questions }}</td>
+                            <td>{{ log.logical_questions }}</td>
+                            <td>{{ log.verbal_questions }}</td>
+                            <td><span class="badge bg-success-glow text-success">{{ log.accuracy_percentage }}%</span></td>
+                            <td><span class="badge bg-primary-glow text-primary">{{ log.mock_test_score }}%</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No activity logs recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const isDark = document.body.classList.contains('dark-theme');
+        const labelColor = isDark ? '#94a3b8' : '#475569';
+        const gridColor = isDark ? '#1f2937' : '#e2e8f0';
+
+        const dates = [
+            {% for log in history %}
+                '{{ log.date.strftime("%b %d") }}',
+            {% endfor %}
+        ];
+        
+        const accuracyData = [
+            {% for log in history %}
+                {{ log.accuracy_percentage }},
+            {% endfor %}
+        ];
+        
+        const mockData = [
+            {% for log in history %}
+                {{ log.mock_test_score }},
+            {% endfor %}
+        ];
+
+        // 1. Accuracy Chart
+        const ctxAccuracy = document.getElementById('accuracyChart').getContext('2d');
+        new Chart(ctxAccuracy, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Accuracy %',
+                    data: accuracyData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.1,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: labelColor }, grid: { color: gridColor } },
+                    y: { min: 0, max: 100, ticks: { color: labelColor }, grid: { color: gridColor } }
+                }
+            }
+        });
+
+        // 2. Mock Test Performance Chart
+        const ctxMock = document.getElementById('mockChart').getContext('2d');
+        new Chart(ctxMock, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Mock Test %',
+                    data: mockData,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'transparent',
+                    tension: 0.1,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: labelColor }, grid: { color: gridColor } },
+                    y: { min: 0, max: 100, ticks: { color: labelColor }, grid: { color: gridColor } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

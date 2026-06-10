@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">Monthly Project Hub</h2>
+            <p class="text-muted mb-0">Every member must build and deliver one project every month to keep scoring.</p>
+        </div>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm align-self-start"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Registration/Edit Form Column -->
+    <div class="col-lg-5">
+        <div class="card border-0 p-4 shadow-sm">
+            <h5 class="font-outfit fw-bold mb-3">
+                {% if action == 'edit' %}
+                    <i class="bi bi-pencil-square text-success me-2"></i>Edit Project
+                {% else %}
+                    <i class="bi bi-folder-plus text-primary me-2"></i>Register Monthly Project
+                {% endif %}
+            </h5>
+            
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.project_name.label(class="form-label") }}
+                    {% if form.project_name.errors %}
+                        {{ form.project_name(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.project_name.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.project_name(class="form-control", placeholder="e.g., Portfolio Website, Chat App") }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows="3", placeholder="Briefly describe what you are building...") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.github_link.label(class="form-label") }}
+                    {% if form.github_link.errors %}
+                        {{ form.github_link(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.github_link.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.github_link(class="form-control", placeholder="https://github.com/username/repo") }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.live_demo_link.label(class="form-label") }}
+                    {% if form.live_demo_link.errors %}
+                        {{ form.live_demo_link(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.live_demo_link.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.live_demo_link(class="form-control", placeholder="https://demo-link.com") }}
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        {{ form.deadline.label(class="form-label") }}
+                        {{ form.deadline(class="form-control", type="date") }}
+                    </div>
+                    
+                    <div class="col-6 mb-3">
+                        {{ form.completion_percentage.label(class="form-label") }}
+                        {{ form.completion_percentage(class="form-control") }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.status.label(class="form-label") }}
+                    {{ form.status(class="form-select") }}
+                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Setting status to 'Completed' will submit it to Admin for review.</small>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    {{ form.submit(class="btn btn-primary flex-grow-1") }}
+                    {% if action == 'edit' %}
+                        <a href="{{ url_for('main.projects') }}" class="btn btn-outline-secondary">Cancel</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Projects History Column -->
+    <div class="col-lg-7">
+        <div class="card border-0 p-4 shadow-sm h-100">
+            <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-clock-history text-secondary me-2"></i>Registered Projects History</h5>
+            
+            <div class="list-container d-flex flex-column gap-3">
+                {% for proj in projects %}
+                <div class="card border border-1 border-color p-3 shadow-none">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-0">{{ proj.project_name }}</h6>
+                            <small class="text-muted">Deadline: {{ proj.deadline.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        <span class="badge {% if proj.status == 'Completed' %}bg-success{% elif proj.status == 'Review Pending' %}bg-info{% elif proj.status == 'In Progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ proj.status }}
+                        </span>
+                    </div>
+                    
+                    <p class="text-muted small mb-2">{{ proj.description or 'No description provided.' }}</p>
+                    
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="progress-bar-custom flex-grow-1">
+                            <div class="progress-bar-custom-fill bg-success" style="width: {{ proj.completion_percentage }}%;"></div>
+                        </div>
+                        <span class="small fw-semibold">{{ proj.completion_percentage }}%</span>
+                    </div>
+                    
+                    <!-- Admin Feedback Warning -->
+                    {% if proj.admin_feedback %}
+                    <div class="alert alert-warning border-0 p-2 mb-3 small d-flex gap-2 align-items-start">
+                        <i class="bi bi-chat-left-text-fill mt-1"></i>
+                        <div>
+                            <strong>Admin Review:</strong> {{ proj.admin_feedback }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="links">
+                            {% if proj.github_link %}
+                            <a href="{{ proj.github_link }}" target="_blank" class="text-decoration-none small text-theme-inverse me-2"><i class="bi bi-github me-1"></i>Repo</a>
+                            {% endif %}
+                            {% if proj.live_demo_link %}
+                            <a href="{{ proj.live_demo_link }}" target="_blank" class="text-decoration-none small text-info"><i class="bi bi-box-arrow-up-right me-1"></i>Demo</a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Actions -->
+                        {% if proj.status != 'Completed' and proj.status != 'Review Pending' %}
+                        <a href="{{ url_for('main.projects', action='edit', proj_id=proj.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i> Edit
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-folder-x fs-1 mb-2 d-block"></i>
+                    No projects registered yet. Register one on the left to start.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

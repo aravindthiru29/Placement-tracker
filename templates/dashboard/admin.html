@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Page Header -->
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">Group Admin Command</h2>
+            <p class="text-muted mb-0">Overview of preparation progress, alerts, and monthly project approvals.</p>
+        </div>
+        <div class="date-badge bg-secondary px-3 py-2 rounded-3 border border-1 border-color text-muted small">
+            <i class="bi bi-shield-fill text-primary me-1"></i> Admin Panel
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN KEY STATS CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 p-3 h-100 bg-secondary">
+            <h6 class="text-muted text-uppercase small font-outfit fw-bold">Active Members</h6>
+            <h3 class="font-outfit fw-extrabold mb-0">{{ stats.active_members }} <span class="fs-6 text-muted fw-normal">/ {{ stats.total_members }}</span></h3>
+            <p class="text-xs text-muted mb-0 mt-2">Logged logs in last 7 days</p>
+        </div>
+    </div>
+    
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 p-3 h-100 bg-secondary">
+            <h6 class="text-muted text-uppercase small font-outfit fw-bold">Top Performer</h6>
+            <h3 class="font-outfit fw-extrabold mb-0 text-warning text-truncate" style="max-width: 100%;">{{ stats.top_performer }}</h3>
+            <p class="text-xs text-muted mb-0 mt-2">Leaderboard Rank #1</p>
+        </div>
+    </div>
+    
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 p-3 h-100 bg-secondary">
+            <h6 class="text-muted text-uppercase small font-outfit fw-bold">Most Consistent</h6>
+            <h3 class="font-outfit fw-extrabold mb-0 text-info text-truncate" style="max-width: 100%;">{{ stats.most_consistent }}</h3>
+            <p class="text-xs text-muted mb-0 mt-2">Highest active streak</p>
+        </div>
+    </div>
+    
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 p-3 h-100 bg-secondary">
+            <h6 class="text-muted text-uppercase small font-outfit fw-bold">Most Improved</h6>
+            <h3 class="font-outfit fw-extrabold mb-0 text-success text-truncate" style="max-width: 100%;">{{ stats.most_improved }}</h3>
+            <p class="text-xs text-muted mb-0 mt-2">Highest 14-day activity delta</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Group Analytics Visualization -->
+    <div class="col-lg-6">
+        <div class="card border-0 p-4 h-100">
+            <h5 class="font-outfit fw-bold mb-3">Group Activity Benchmarks</h5>
+            <div class="chart-container" style="position: relative; height:240px;">
+                <canvas id="groupAveragesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card border-0 p-4 h-100">
+            <h5 class="font-outfit fw-bold mb-3">Project Deliverables Rate</h5>
+            <div class="row align-items-center h-100">
+                <div class="col-sm-6 text-center">
+                    <div class="score-circle border-success my-2">
+                        <div class="number text-success">{{ analytics.project_completion_rate }}%</div>
+                        <div class="label">Completion</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"><i class="bi bi-circle-fill text-success me-2"></i> Completed: <b>{{ analytics.completed_projects }}</b></li>
+                        <li class="mb-2"><i class="bi bi-circle-fill text-warning me-2"></i> In Review: <b>{{ pending_projects|length }}</b></li>
+                        <li class="mb-2"><i class="bi bi-circle-fill text-secondary me-2"></i> Total Active: <b>{{ analytics.active_projects }}</b></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROJECT REVIEW HUB -->
+{% if pending_projects %}
+<div class="card border-0 p-4 mb-4 shadow-sm">
+    <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-clipboard2-check text-warning me-2"></i>Pending Project Reviews ({{ pending_projects|length }})</h5>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Project Name</th>
+                    <th>Deadline</th>
+                    <th>Code & Live Links</th>
+                    <th>Review Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proj in pending_projects %}
+                <tr>
+                    <td>
+                        <span class="fw-semibold">{{ proj.user.name }}</span><br>
+                        <small class="text-muted">{{ proj.user.email }}</small>
+                    </td>
+                    <td>
+                        <span class="fw-bold">{{ proj.project_name }}</span><br>
+                        <small class="text-muted text-truncate d-inline-block" style="max-width: 200px;">{{ proj.description or 'No description' }}</small>
+                    </td>
+                    <td>{{ proj.deadline.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if proj.github_link %}
+                            <a href="{{ proj.github_link }}" target="_blank" class="btn btn-outline-dark btn-sm text-theme-inverse me-1"><i class="bi bi-github"></i> GitHub</a>
+                        {% endif %}
+                        {% if proj.live_demo_link %}
+                            <a href="{{ proj.live_demo_link }}" target="_blank" class="btn btn-outline-info btn-sm text-info"><i class="bi bi-box-arrow-up-right"></i> Live</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- Trigger Review Modal -->
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal-{{ proj.id }}">
+                            <i class="bi bi-pencil-square me-1"></i> Review
+                        </button>
+                        
+                        <!-- Review Modal -->
+                        <div class="modal fade" id="reviewModal-{{ proj.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content bg-secondary text-primary border-color">
+                                    <div class="modal-header border-color">
+                                        <h5 class="modal-title font-outfit fw-bold">Review Project: {{ proj.project_name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('main.review_project', project_id=proj.id) }}">
+                                        {{ feedback_form.hidden_tag() }}
+                                        <div class="modal-body">
+                                            <p class="small text-muted">Submit review status and notes for <b>{{ proj.user.name }}</b>.</p>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Action Status</label>
+                                                <select name="status" class="form-select">
+                                                    <option value="Completed">Approve & Complete (100% Score)</option>
+                                                    <option value="In Progress">Reject & Request Changes (Back to In Progress)</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Review Feedback</label>
+                                                <textarea name="feedback" class="form-control" rows="3" placeholder="Provide feedback to the member (minimum 5 characters)..." minlength="5" required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-color">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Submit Review</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- MEMBER MANAGEMENT LIST -->
+<div class="card border-0 p-4 shadow-sm">
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+        <h5 class="font-outfit fw-bold mb-0">Managed Group Members</h5>
+        <form method="GET" action="" class="d-flex gap-2" style="max-width: 400px; width: 100%;">
+            <input type="text" name="search" class="form-control" placeholder="Search members by name or email..." value="{{ search_query }}">
+            {% if search_query %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary d-flex align-items-center"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+        </form>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Overall Readiness</th>
+                    <th>LeetCode (35)</th>
+                    <th>Aptitude (25)</th>
+                    <th>GitHub (20)</th>
+                    <th>Project (20)</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in member_scores %}
+                <tr>
+                    <td>
+                        <span class="fw-bold">{{ item.user.name }}</span><br>
+                        <small class="text-muted">{{ item.user.email }}</small>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-primary">{{ item.scores.overall }}</span>
+                            <div class="progress-bar-custom flex-grow-1" style="width: 80px;">
+                                <div class="progress-bar-custom-fill bg-primary" style="width: {{ item.scores.overall }}%;"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ item.scores.leetcode }} <small class="text-muted">({{ item.scores.leetcode_total }} q)</small></td>
+                    <td>{{ item.scores.aptitude }} <small class="text-muted">({{ item.scores.aptitude_accuracy }}%)</small></td>
+                    <td>{{ item.scores.github }} <small class="text-muted">({{ item.scores.github_points }} pts)</small></td>
+                    <td>{{ item.scores.project }} <small class="text-muted">({{ item.scores.project_percentage }}%)</small></td>
+                    <td class="text-end">
+                        <a href="{{ url_for('main.reports', type='member', member_id=item.user.id) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-file-earmark-bar-graph"></i> Report
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No group members found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('groupAveragesChart').getContext('2d');
+        const isDark = document.body.classList.contains('dark-theme');
+        const labelColor = isDark ? '#94a3b8' : '#475569';
+        const gridColor = isDark ? '#1f2937' : '#e2e8f0';
+
+        const data = {
+            labels: ['LeetCode Solved', 'Aptitude Solved', 'GitHub contributions'],
+            datasets: [{
+                label: 'Group Average',
+                data: [
+                    {{ analytics.avg_leetcode }}, 
+                    {{ analytics.avg_aptitude }}, 
+                    {{ analytics.avg_github }}
+                ],
+                backgroundColor: [
+                    'rgba(245, 158, 11, 0.2)',
+                    'rgba(6, 182, 212, 0.2)',
+                    'rgba(79, 70, 229, 0.2)'
+                ],
+                borderColor: [
+                    '#f59e0b',
+                    '#06b6d4',
+                    '#4f46e5'
+                ],
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        };
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: labelColor },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: labelColor },
+                        grid: { color: gridColor }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

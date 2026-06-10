@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Page Header -->
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">Welcome back, {{ current_user.name }}!</h2>
+            <p class="text-muted mb-0">Here is your current placement preparation standing.</p>
+        </div>
+        <div class="date-badge bg-secondary px-3 py-2 rounded-3 border border-1 border-color text-muted small">
+            <i class="bi bi-calendar3 me-1"></i> {{ date.today().strftime('%B %d, %Y') }}
+        </div>
+    </div>
+</div>
+
+<!-- TOP STATS CARDS -->
+<div class="row g-4 mb-4">
+    <!-- Current Rank Card -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 p-4 bg-secondary">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="metric-badge bg-warning text-dark"><i class="bi bi-trophy-fill"></i></div>
+                <span class="badge bg-warning-glow text-warning font-outfit px-2 py-1">Rankings</span>
+            </div>
+            <h6 class="text-muted text-uppercase small font-outfit fw-bold">Leaderboard Standing</h6>
+            <h2 class="font-outfit fw-extrabold mb-1">
+                {% if user_rank %}
+                    #{{ user_rank.rank }} <span class="fs-6 text-muted fw-normal">of {{ leaderboard_count or 1 }} members</span>
+                {% else %}
+                    N/A
+                {% endif %}
+            </h2>
+            <p class="text-muted small mb-0 mt-2">
+                <a href="{{ url_for('main.leaderboard') }}" class="text-primary text-decoration-none">
+                    View full leaderboard <i class="bi bi-arrow-right-short"></i>
+                </a>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Current Streak Card -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 p-4 bg-secondary">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="metric-badge bg-danger text-white"><i class="bi bi-fire"></i></div>
+                <span class="badge bg-danger-glow text-danger font-outfit px-2 py-1">Streak</span>
+            </div>
+            <h6 class="text-muted text-uppercase small font-outfit fw-bold">LeetCode Coding Streak</h6>
+            <h2 class="font-outfit fw-extrabold mb-1">{{ latest_lc.streak if latest_lc else 0 }} <span class="fs-6 text-muted fw-normal">Days</span></h2>
+            <p class="text-muted small mb-0 mt-2">
+                Keep logging daily progress to protect your streak.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Active Alerts / Notifications Summary -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 p-4 bg-secondary">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="metric-badge bg-info text-white"><i class="bi bi-bell-fill"></i></div>
+                <span class="badge bg-info-glow text-info font-outfit px-2 py-1">Alerts</span>
+            </div>
+            <h6 class="text-muted text-uppercase small font-outfit fw-bold">Active Alerts Center</h6>
+            <h2 class="font-outfit fw-extrabold mb-1">{{ unread_notifs|length }} <span class="fs-6 text-muted fw-normal">Unread</span></h2>
+            <p class="text-muted small mb-0 mt-2">
+                <a href="{{ url_for('main.notifications') }}" class="text-info text-decoration-none">
+                    Review warnings & notifications <i class="bi bi-arrow-right-short"></i>
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- FIVE CORE PILLARS / DASHBOARD CARDS -->
+<h4 class="font-outfit fw-bold mb-3">Your Progress Across Core Pillars</h4>
+<div class="row g-4 mb-4">
+    <!-- Card 1: LeetCode Progress -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title font-outfit mb-0">LeetCode Progress</h5>
+                <i class="bi bi-code-slash text-warning fs-4"></i>
+            </div>
+            <hr class="my-2 text-muted">
+            <div class="my-3 text-center">
+                <h2 class="font-outfit fw-bold mb-0">{{ scores.leetcode_total }}</h2>
+                <small class="text-muted text-uppercase fs-xs">Total Solved</small>
+            </div>
+            <div class="d-flex justify-content-between mb-1 small">
+                <span class="text-success"><i class="bi bi-circle-fill me-1"></i> Easy: {{ latest_lc.easy_solved if latest_lc else 0 }}</span>
+                <span class="text-warning"><i class="bi bi-circle-fill me-1"></i> Medium: {{ latest_lc.medium_solved if latest_lc else 0 }}</span>
+                <span class="text-danger"><i class="bi bi-circle-fill me-1"></i> Hard: {{ latest_lc.hard_solved if latest_lc else 0 }}</span>
+            </div>
+            <div class="mt-3">
+                <a href="{{ url_for('main.leetcode') }}" class="btn btn-outline-primary btn-sm w-100">Log & View Graphs</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card 2: Aptitude Progress -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title font-outfit mb-0">Aptitude Prep</h5>
+                <i class="bi bi-brain text-info fs-4"></i>
+            </div>
+            <hr class="my-2 text-muted">
+            <div class="my-3 text-center">
+                <h2 class="font-outfit fw-bold mb-0">{{ scores.aptitude_total }}</h2>
+                <small class="text-muted text-uppercase fs-xs">Questions Solved</small>
+            </div>
+            <div class="row text-center g-2 small">
+                <div class="col-6 border-end">
+                    <span class="d-block fw-semibold">{{ scores.aptitude_accuracy }}%</span>
+                    <span class="text-muted text-xs">Accuracy</span>
+                </div>
+                <div class="col-6">
+                    <span class="d-block fw-semibold">{{ latest_apt.mock_test_score if latest_apt else 0.0 }}%</span>
+                    <span class="text-muted text-xs">Mock Score</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="{{ url_for('main.aptitude') }}" class="btn btn-outline-info btn-sm w-100 text-info">Log & Charts</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card 3: GitHub Contributions -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title font-outfit mb-0">GitHub Progress</h5>
+                <i class="bi bi-github text-dark fs-4 text-theme-inverse"></i>
+            </div>
+            <hr class="my-2 text-muted">
+            <div class="my-3 text-center">
+                <h2 class="font-outfit fw-bold mb-0">{{ latest_gh.commits if latest_gh else 0 }}</h2>
+                <small class="text-muted text-uppercase fs-xs">Commits Logged</small>
+            </div>
+            <div class="d-flex justify-content-around text-center small">
+                <div>
+                    <span class="d-block fw-semibold">{{ latest_gh.pull_requests if latest_gh else 0 }}</span>
+                    <span class="text-muted text-xs">PRs</span>
+                </div>
+                <div>
+                    <span class="d-block fw-semibold">{{ latest_gh.features_completed if latest_gh else 0 }}</span>
+                    <span class="text-muted text-xs">Features</span>
+                </div>
+                <div>
+                    <span class="d-block fw-semibold">{{ latest_gh.repositories_created if latest_gh else 0 }}</span>
+                    <span class="text-muted text-xs">Repos</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="{{ url_for('main.github') }}" class="btn btn-outline-dark btn-sm w-100 text-theme-inverse">Log & Trends</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card 4: Monthly Project Progress -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title font-outfit mb-0">Monthly Project</h5>
+                <i class="bi bi-folder-symlink-fill text-success fs-4"></i>
+            </div>
+            <hr class="my-2 text-muted">
+            {% if current_proj %}
+            <div class="my-2">
+                <h6 class="text-truncate fw-bold mb-1">{{ current_proj.project_name }}</h6>
+                <div class="d-flex justify-content-between align-items-center text-muted small mb-2">
+                    <span>Deadline: {{ current_proj.deadline.strftime('%b %d') }}</span>
+                    <span class="badge {% if current_proj.status == 'Completed' %}bg-success{% elif current_proj.status == 'Review Pending' %}bg-info{% elif current_proj.status == 'In Progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                        {{ current_proj.status }}
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress-bar-custom flex-grow-1">
+                        <div class="progress-bar-custom-fill bg-success" style="width: {{ current_proj.completion_percentage }}%;"></div>
+                    </div>
+                    <span class="small fw-semibold">{{ current_proj.completion_percentage }}%</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="my-4 text-center text-muted">
+                <i class="bi bi-folder-plus fs-3 d-block mb-1"></i>
+                <small>No project registered for this month.</small>
+            </div>
+            {% endif %}
+            <div class="mt-3">
+                <a href="{{ url_for('main.projects') }}" class="btn btn-outline-success btn-sm w-100">Manage Project</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card 5: Placement Readiness Score -->
+    <div class="col-md-12 col-lg-8">
+        <div class="card h-100 border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title font-outfit mb-0">Placement Readiness Score</h5>
+                <i class="bi bi-activity text-primary fs-4"></i>
+            </div>
+            <hr class="my-2 text-muted">
+            
+            <div class="row align-items-center g-3">
+                <!-- Radial Circle Representation -->
+                <div class="col-sm-5 text-center">
+                    <div class="score-circle border-primary">
+                        <div class="number text-primary">{{ scores.overall }}</div>
+                        <div class="label">out of 100</div>
+                    </div>
+                </div>
+                
+                <!-- Breakdown Progress Bars -->
+                <div class="col-sm-7">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-medium">LeetCode Progress (35%)</span>
+                            <span class="fw-semibold">{{ scores.leetcode }} / 35</span>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-bar-custom-fill bg-warning" style="width: {{ (scores.leetcode / 35.0) * 100 }}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-medium">Aptitude Preparation (25%)</span>
+                            <span class="fw-semibold">{{ scores.aptitude }} / 25</span>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-bar-custom-fill bg-info" style="width: {{ (scores.aptitude / 25.0) * 100 }}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-medium">GitHub Contributions (20%)</span>
+                            <span class="fw-semibold">{{ scores.github }} / 20</span>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-bar-custom-fill bg-dark text-theme-inverse" style="width: {{ (scores.github / 20.0) * 100 }}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-medium">Monthly Project (20%)</span>
+                            <span class="fw-semibold">{{ scores.project }} / 20</span>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-bar-custom-fill bg-success" style="width: {{ (scores.project / 20.0) * 100 }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fetch count of leaderboard entries dynamically to pass to rankings count
+    document.addEventListener("DOMContentLoaded", function() {
+        const leaderboard_count = {{ leaderboard|length }};
+    });
+</script>
+{% endblock %}

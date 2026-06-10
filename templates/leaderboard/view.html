@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">Group Leaderboard</h2>
+            <p class="text-muted mb-0">Rankings based on points accumulated across all preparation modules.</p>
+        </div>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm align-self-start"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+    </div>
+</div>
+
+<!-- PODIUM (TOP 3) -->
+{% if leaderboard|length >= 1 %}
+<div class="row mb-5 justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-0 p-4 shadow-sm bg-secondary">
+            <div class="podium">
+                <!-- Second Place -->
+                {% if leaderboard|length >= 2 %}
+                <div class="podium-step second">
+                    <div class="podium-rank">2</div>
+                    <div class="avatar bg-secondary text-primary rounded-circle mb-2 border border-2 border-slate" style="width: 44px; height: 44px; display:flex; align-items:center; justify-content:center;">
+                        {{ leaderboard[1].name[0] | upper }}
+                    </div>
+                    <span class="fw-bold small text-truncate text-center" style="max-width: 90px;">{{ leaderboard[1].name }}</span>
+                    <span class="small fw-semibold text-muted mt-1">{{ leaderboard[1].score }} pts</span>
+                </div>
+                {% endif %}
+                
+                <!-- First Place -->
+                <div class="podium-step first">
+                    <div class="podium-rank">1</div>
+                    <div class="avatar bg-warning text-dark rounded-circle mb-2" style="width: 50px; height: 50px; display:flex; align-items:center; justify-content:center; font-size: 1.25rem;">
+                        {{ leaderboard[0].name[0] | upper }}
+                    </div>
+                    <span class="fw-bold text-truncate text-center" style="max-width: 90px;">{{ leaderboard[0].name }}</span>
+                    <span class="fw-semibold text-warning mt-1">{{ leaderboard[0].score }} pts</span>
+                </div>
+                
+                <!-- Third Place -->
+                {% if leaderboard|length >= 3 %}
+                <div class="podium-step third">
+                    <div class="podium-rank">3</div>
+                    <div class="avatar bg-secondary text-primary rounded-circle mb-2 border border-2 border-slate" style="width: 44px; height: 44px; display:flex; align-items:center; justify-content:center;">
+                        {{ leaderboard[2].name[0] | upper }}
+                    </div>
+                    <span class="fw-bold small text-truncate text-center" style="max-width: 90px;">{{ leaderboard[2].name }}</span>
+                    <span class="small fw-semibold text-muted mt-1">{{ leaderboard[2].score }} pts</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="text-center mt-3 pt-2 border-top border-color">
+                <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Points system: Easy LC = 2pts, Med LC = 5pts, Hard LC = 10pts, 10 Apt Qs = 3pts, GitHub Feature = 10pts, Project = 100pts</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- RANKINGS TABLE -->
+<div class="card border-0 p-4 shadow-sm">
+    <h5 class="font-outfit fw-bold mb-4">Complete Leaderboard Standings</h5>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Rank</th>
+                    <th>Name</th>
+                    <th class="text-center">LeetCode Points</th>
+                    <th class="text-center">Aptitude Points</th>
+                    <th class="text-center">GitHub Points</th>
+                    <th class="text-center">Projects Points</th>
+                    <th class="text-center">Trend</th>
+                    <th class="text-end">Total Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in leaderboard %}
+                <tr class="{% if entry.user_id == current_user.id %}table-active{% endif %}">
+                    <td class="fw-bold">
+                        {% if entry.rank == 1 %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-award-fill"></i> #1</span>
+                        {% elif entry.rank == 2 %}
+                            <span class="badge bg-secondary text-light">#2</span>
+                        {% elif entry.rank == 3 %}
+                            <span class="badge bg-dark text-light border border-secondary">#3</span>
+                        {% else %}
+                            #{{ entry.rank }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ entry.name }}</span>
+                        {% if entry.user_id == current_user.id %}
+                            <span class="badge bg-primary ms-1">You</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ entry.lc_pts }} pts</td>
+                    <td class="text-center">{{ entry.apt_pts }} pts</td>
+                    <td class="text-center">{{ entry.gh_pts }} pts</td>
+                    <td class="text-center">{{ entry.proj_pts }} pts</td>
+                    <td class="text-center">
+                        {% if entry.trend == 'up' %}
+                            <i class="bi bi-graph-up-arrow text-success" title="Active today"></i>
+                        {% else %}
+                            <i class="bi bi-dash-lg text-muted" title="Inactive today"></i>
+                        {% endif %}
+                    </td>
+                    <td class="text-end fw-bold text-gradient fs-5">{{ entry.score }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No rankings computed. Log progress to join.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

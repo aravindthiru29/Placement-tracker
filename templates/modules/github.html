@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">GitHub Contribution Module</h2>
+            <p class="text-muted mb-0">Monitor commits, pull requests, features coded, and project repositories.</p>
+        </div>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm align-self-start"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Logging Form Column -->
+    <div class="col-lg-4">
+        <div class="card border-0 p-4 shadow-sm mb-4">
+            <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-plus-circle-fill text-dark text-theme-inverse me-2"></i>Log GitHub Contributions</h5>
+            <p class="small text-muted mb-3">Record your latest metrics. Make sure you push regularly to keep your profile active!</p>
+            
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.commits.label(class="form-label") }}
+                    {{ form.commits(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.repositories_created.label(class="form-label") }}
+                    {{ form.repositories_created(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.features_completed.label(class="form-label") }}
+                    {{ form.features_completed(class="form-control") }}
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.pull_requests.label(class="form-label") }}
+                    {{ form.pull_requests(class="form-control") }}
+                </div>
+                
+                {{ form.submit(class="btn btn-primary w-100 py-2.5") }}
+            </form>
+        </div>
+    </div>
+    
+    <!-- Analytics Column -->
+    <div class="col-lg-8">
+        <!-- Highlights Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Total Commits</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-primary">{{ latest.commits if latest else 0 }}</h3>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Pull Requests</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-success">{{ latest.pull_requests if latest else 0 }}</h3>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Features Done</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-warning">{{ latest.features_completed if latest else 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Cards -->
+        <div class="card border-0 p-4 shadow-sm mb-4">
+            <h5 class="font-outfit fw-bold mb-3">Weekly Contribution Trend (Commits)</h5>
+            <div class="chart-container" style="position: relative; height: 260px;">
+                <canvas id="commitsChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- History Table -->
+        <div class="card border-0 p-4 shadow-sm">
+            <h5 class="font-outfit fw-bold mb-3">Activity Logs History</h5>
+            <div class="table-responsive" style="max-height: 250px;">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Commits</th>
+                            <th>Repositories</th>
+                            <th>Features Completed</th>
+                            <th>Pull Requests</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in history | reverse %}
+                        <tr>
+                            <td>{{ log.date.strftime('%Y-%m-%d') }}</td>
+                            <td><span class="badge bg-primary-glow text-primary">+{{ log.commits }}</span></td>
+                            <td>{{ log.repositories_created }}</td>
+                            <td><span class="badge bg-warning-glow text-warning">+{{ log.features_completed }}</span></td>
+                            <td><span class="badge bg-success-glow text-success">+{{ log.pull_requests }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No activity logs recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctxCommits = document.getElementById('commitsChart').getContext('2d');
+        const isDark = document.body.classList.contains('dark-theme');
+        const labelColor = isDark ? '#94a3b8' : '#475569';
+        const gridColor = isDark ? '#1f2937' : '#e2e8f0';
+
+        const dates = [
+            {% for log in history %}
+                '{{ log.date.strftime("%b %d") }}',
+            {% endfor %}
+        ];
+        
+        const commitsData = [
+            {% for log in history %}
+                {{ log.commits }},
+            {% endfor %}
+        ];
+
+        new Chart(ctxCommits, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Commits',
+                    data: commitsData,
+                    backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                    borderColor: '#4f46e5',
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: labelColor }, grid: { color: gridColor } },
+                    y: { beginAtZero: true, ticks: { color: labelColor }, grid: { color: gridColor } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

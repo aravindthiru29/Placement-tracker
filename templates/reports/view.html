@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">Reports Hub</h2>
+            <p class="text-muted mb-0">Generate progress reports and export data sheets for external audits.</p>
+        </div>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm align-self-start"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Filters Column -->
+    <div class="col-lg-4">
+        <div class="card border-0 p-4 shadow-sm mb-4">
+            <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-funnel-fill text-primary me-2"></i>Report Parameters</h5>
+            
+            <form method="GET" action="" id="reportFilterForm">
+                <div class="mb-3">
+                    <label class="form-label">Report Category</label>
+                    <select name="type" id="reportTypeSelect" class="form-select">
+                        {% if current_user.role == 'admin' %}
+                        <option value="group" {% if report_type == 'group' %}selected{% endif %}>Group Aggregates</option>
+                        {% endif %}
+                        <option value="member" {% if report_type == 'member' %}selected{% endif %}>Individual Member</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3" id="memberSelectGroup" style="{% if report_type != 'member' %}display: none;{% endif %}">
+                    <label class="form-label">Select Member</label>
+                    <select name="member_id" class="form-select">
+                        {% for m in members %}
+                        <option value="{{ m.id }}" {% if selected_member_id|string == m.id|string %}selected{% endif %}>{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Time Scope</label>
+                    <select name="days" class="form-select">
+                        <option value="7" {% if days == 7 %}selected{% endif %}>Weekly Audit (Last 7 Days)</option>
+                        <option value="30" {% if days == 30 %}selected{% endif %}>Monthly Audit (Last 30 Days)</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 py-2.5 mb-2"><i class="bi bi-arrow-repeat me-1"></i> Compile Preview</button>
+            </form>
+        </div>
+        
+        <!-- Quick Export card -->
+        <div class="card border-0 p-4 shadow-sm">
+            <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-download text-success me-2"></i>Export Report Document</h5>
+            <p class="small text-muted mb-3">Download the currently compiled preview dataset in standard formats.</p>
+            
+            <div class="d-grid gap-2">
+                <!-- PDF Download -->
+                <a href="{{ url_for('main.export_report', file_format='pdf', type=report_type, days=days, member_id=selected_member_id) }}" class="btn btn-outline-danger">
+                    <i class="bi bi-file-pdf-fill me-1"></i> Download PDF Document
+                </a>
+                
+                <!-- Excel Download -->
+                <a href="{{ url_for('main.export_report', file_format='excel', type=report_type, days=days, member_id=selected_member_id) }}" class="btn btn-outline-success">
+                    <i class="bi bi-file-excel-fill me-1"></i> Download Excel Spreadsheet
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Report Preview Column -->
+    <div class="col-lg-8">
+        <div class="card border-0 p-4 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-outfit fw-bold mb-0">Report Preview</h5>
+                <span class="text-xs text-muted">Generated: {{ report_data.generated_at }}</span>
+            </div>
+            <hr class="my-2 text-muted">
+            
+            <div class="row mb-4">
+                <div class="col-md-6 small">
+                    <p class="mb-1"><strong>Category:</strong> {{ report_data.report_type }} Report</p>
+                    <p class="mb-1"><strong>Period Scope:</strong> {{ report_data.period_start }} to {{ report_data.period_end }}</p>
+                </div>
+                {% if report_data.member_name %}
+                <div class="col-md-6 small text-md-end">
+                    <p class="mb-1"><strong>Audited User:</strong> {{ report_data.member_name }}</p>
+                    <p class="mb-1"><strong>Email:</strong> {{ report_data.member_email }}</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Summary Metrics Tables -->
+            <h6 class="font-outfit fw-bold mb-2">Performance Aggregates</h6>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Category</th>
+                            <th>Key Performance Indicator</th>
+                            <th class="text-end">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if report_type == 'member' %}
+                        <tr>
+                            <td>LeetCode</td>
+                            <td>Problems Solved (Easy / Med / Hard)</td>
+                            <td class="text-end fw-semibold text-warning">
+                                {{ report_data.summary.leetcode_easy_solved }} / {{ report_data.summary.leetcode_medium_solved }} / {{ report_data.summary.leetcode_hard_solved }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>LeetCode</td>
+                            <td>Active Streak (Days)</td>
+                            <td class="text-end fw-semibold text-danger">{{ report_data.summary.leetcode_streak }}d</td>
+                        </tr>
+                        <tr>
+                            <td>Aptitude</td>
+                            <td>Questions Answered</td>
+                            <td class="text-end fw-semibold text-info">{{ report_data.summary.aptitude_questions_solved }}</td>
+                        </tr>
+                        <tr>
+                            <td>Aptitude</td>
+                            <td>Accuracy / Mock Test Score</td>
+                            <td class="text-end fw-semibold text-success">{{ report_data.summary.aptitude_accuracy }}% / {{ report_data.summary.aptitude_mock_score }}%</td>
+                        </tr>
+                        <tr>
+                            <td>GitHub</td>
+                            <td>Commits / PRs Logged</td>
+                            <td class="text-end fw-semibold">{{ report_data.summary.github_commits }} / {{ report_data.summary.github_pull_requests }}</td>
+                        </tr>
+                        <tr>
+                            <td>Monthly Projects</td>
+                            <td>Projects Completed / Total</td>
+                            <td class="text-end fw-semibold text-success">{{ report_data.summary.projects_completed }} / {{ report_data.summary.projects_count }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td>Group</td>
+                            <td>Total Monitored Members</td>
+                            <td class="text-end fw-semibold">{{ report_data.total_members }}</td>
+                        </tr>
+                        <tr>
+                            <td>LeetCode</td>
+                            <td>Group Total Solved (Average per Member)</td>
+                            <td class="text-end fw-semibold text-warning">{{ report_data.summary.group_total_leetcode }} ({{ report_data.summary.group_avg_leetcode }})</td>
+                        </tr>
+                        <tr>
+                            <td>Aptitude</td>
+                            <td>Group Total Solved (Average per Member)</td>
+                            <td class="text-end fw-semibold text-info">{{ report_data.summary.group_total_aptitude_questions }} ({{ report_data.summary.group_avg_aptitude_questions }})</td>
+                        </tr>
+                        <tr>
+                            <td>GitHub</td>
+                            <td>Group Total Commits (Average per Member)</td>
+                            <td class="text-end fw-semibold">{{ report_data.summary.group_total_commits }} ({{ report_data.summary.group_avg_commits }})</td>
+                        </tr>
+                        <tr>
+                            <td>Projects</td>
+                            <td>Monthly Projects Completion Rate</td>
+                            <td class="text-end fw-semibold text-success">{{ report_data.summary.group_project_completion_rate }}%</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Details Tables -->
+            <h6 class="font-outfit fw-bold mb-2">Detailed Records Log</h6>
+            <div class="table-responsive">
+                {% if report_type == 'member' %}
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Month Project</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th class="text-end">Completion %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in report_data.details.projects %}
+                        <tr>
+                            <td class="fw-semibold">{{ p.name }}</td>
+                            <td>{{ p.deadline }}</td>
+                            <td>
+                                <span class="badge {% if p.status == 'Completed' %}bg-success{% elif p.status == 'Review Pending' %}bg-info{% elif p.status == 'In Progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ p.status }}
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold">{{ p.progress }}%</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No project logs available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th class="text-center">LeetCode</th>
+                            <th class="text-center">Aptitude Qs</th>
+                            <th class="text-center">Accuracy %</th>
+                            <th class="text-center">GitHub Commits</th>
+                            <th class="text-end">Projects Done</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in report_data.details %}
+                        <tr>
+                            <td class="fw-semibold">{{ m.name }}</td>
+                            <td class="text-center">{{ m.leetcode_solved }} <small class="text-muted">({{ m.leetcode_streak }}d)</small></td>
+                            <td class="text-center">{{ m.aptitude_solved }}</td>
+                            <td class="text-center text-success">{{ m.aptitude_accuracy }}%</td>
+                            <td class="text-center">{{ m.github_commits }}</td>
+                            <td class="text-end fw-bold text-success">{{ m.projects_completed }} / {{ m.projects_created }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No member logs available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const reportTypeSelect = document.getElementById('reportTypeSelect');
+        const memberSelectGroup = document.getElementById('memberSelectGroup');
+        
+        if (reportTypeSelect && memberSelectGroup) {
+            reportTypeSelect.addEventListener('change', function() {
+                if (this.value === 'member') {
+                    memberSelectGroup.style.display = 'block';
+                } else {
+                    memberSelectGroup.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

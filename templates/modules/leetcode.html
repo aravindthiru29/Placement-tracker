@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">LeetCode Progress Module</h2>
+            <p class="text-muted mb-0">Record daily question solved stats and review preparation curves.</p>
+        </div>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm align-self-start"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Logging Form Column -->
+    <div class="col-lg-4">
+        <div class="card border-0 p-4 shadow-sm mb-4">
+            <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-plus-circle-fill text-warning me-2"></i>Log Today's Totals</h5>
+            <p class="small text-muted mb-3">Enter your current total counts from your LeetCode profile. The system automatically calculates your daily improvements.</p>
+            
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.easy_solved.label(class="form-label") }}
+                    {{ form.easy_solved(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.medium_solved.label(class="form-label") }}
+                    {{ form.medium_solved(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.hard_solved.label(class="form-label") }}
+                    {{ form.hard_solved(class="form-control") }}
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.streak.label(class="form-label") }}
+                    {{ form.streak(class="form-control") }}
+                </div>
+                
+                {{ form.submit(class="btn btn-primary w-100 py-2.5") }}
+            </form>
+        </div>
+        
+        <!-- Target Progress Card -->
+        <div class="card border-0 p-4 shadow-sm">
+            <h5 class="font-outfit fw-bold mb-3"><i class="bi bi-bullseye text-primary me-2"></i>Active Targets</h5>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span>Weekly Target Progress</span>
+                    <span class="fw-semibold">
+                        {% if latest %}
+                            {{ latest.total_solved }} / {{ weekly_target }}
+                        {% else %}
+                            0 / {{ weekly_target }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="progress-bar-custom">
+                    {% set weekly_pct = (latest.total_solved / weekly_target * 100) if latest else 0 %}
+                    <div class="progress-bar-custom-fill bg-warning" style="width: {{ [weekly_pct, 100] | min }}%;"></div>
+                </div>
+            </div>
+            
+            <div class="mb-0">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span>Monthly Target Progress</span>
+                    <span class="fw-semibold">
+                        {% if latest %}
+                            {{ latest.total_solved }} / {{ monthly_target }}
+                        {% else %}
+                            0 / {{ monthly_target }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="progress-bar-custom">
+                    {% set monthly_pct = (latest.total_solved / monthly_target * 100) if latest else 0 %}
+                    <div class="progress-bar-custom-fill bg-success" style="width: {{ [monthly_pct, 100] | min }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analytics Column -->
+    <div class="col-lg-8">
+        <!-- Highlights Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Total Solved</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-warning">{{ latest.total_solved if latest else 0 }}</h3>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Current Streak</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-danger">{{ latest.streak if latest else 0 }}d</h3>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card border-0 p-3 bg-secondary text-center">
+                    <h6 class="text-muted text-uppercase small font-outfit fw-bold mb-1">Best Streak</h6>
+                    <h3 class="font-outfit fw-extrabold mb-0 text-info">{{ best_streak }}d</h3>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Cards -->
+        <div class="card border-0 p-4 shadow-sm mb-4">
+            <h5 class="font-outfit fw-bold mb-3">LeetCode Progress Trend</h5>
+            <div class="chart-container" style="position: relative; height: 300px;">
+                <canvas id="leetcodeTrendChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- History Table -->
+        <div class="card border-0 p-4 shadow-sm">
+            <h5 class="font-outfit fw-bold mb-3">Activity Logs History</h5>
+            <div class="table-responsive" style="max-height: 250px;">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Easy</th>
+                            <th>Medium</th>
+                            <th>Hard</th>
+                            <th>Total Solved</th>
+                            <th>Streak</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in history | reverse %}
+                        <tr>
+                            <td>{{ log.date.strftime('%Y-%m-%d') }}</td>
+                            <td><span class="badge bg-success-glow text-success">+{{ log.easy_solved }}</span></td>
+                            <td><span class="badge bg-warning-glow text-warning">+{{ log.medium_solved }}</span></td>
+                            <td><span class="badge bg-danger-glow text-danger">+{{ log.hard_solved }}</span></td>
+                            <td class="fw-bold">{{ log.total_solved }}</td>
+                            <td><span class="badge bg-secondary"><i class="bi bi-fire text-danger me-1"></i>{{ log.streak }}d</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No activity logs recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctxTrend = document.getElementById('leetcodeTrendChart').getContext('2d');
+        const isDark = document.body.classList.contains('dark-theme');
+        const labelColor = isDark ? '#94a3b8' : '#475569';
+        const gridColor = isDark ? '#1f2937' : '#e2e8f0';
+
+        // Extract dataset from jinja loop
+        const dates = [
+            {% for log in history %}
+                '{{ log.date.strftime("%b %d") }}',
+            {% endfor %}
+        ];
+        
+        const easyData = [
+            {% for log in history %}
+                {{ log.easy_solved }},
+            {% endfor %}
+        ];
+        
+        const mediumData = [
+            {% for log in history %}
+                {{ log.medium_solved }},
+            {% endfor %}
+        ];
+        
+        const hardData = [
+            {% for log in history %}
+                {{ log.hard_solved }},
+            {% endfor %}
+        ];
+
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Easy Solved',
+                        data: easyData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'transparent',
+                        tension: 0.2,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Medium Solved',
+                        data: mediumData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        tension: 0.2,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Hard Solved',
+                        data: hardData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        tension: 0.2,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: labelColor }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: labelColor },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: labelColor },
+                        grid: { color: gridColor }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

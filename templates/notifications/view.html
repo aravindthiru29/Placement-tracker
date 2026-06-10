@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <div>
+            <h2 class="font-outfit fw-bold mb-1">Notifications & Alert Center</h2>
+            <p class="text-muted mb-0">System alerts regarding preparation inactivity and project deadlines.</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if unread_notifs %}
+            <form method="POST" action="{{ url_for('main.mark_all_notifications_read') }}">
+                <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-envelope-open me-1"></i> Mark All as Read</button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card border-0 p-4 shadow-sm">
+            <h5 class="font-outfit fw-bold mb-4"><i class="bi bi-bell-fill text-danger me-2"></i>Alert Inbox</h5>
+            
+            <div class="list-container d-flex flex-column gap-3">
+                {% for notif in all_notifications %}
+                <div class="card border border-1 border-color p-3 shadow-none {% if not notif.is_read %}bg-light-glow{% endif %}" style="{% if not notif.is_read %}border-left: 4px solid var(--danger);{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div class="d-flex gap-2">
+                            <i class="bi {% if not notif.is_read %}bi-envelope-fill text-danger{% else %}bi-envelope-open text-muted{% endif %} mt-1"></i>
+                            <div>
+                                <p class="mb-1 {% if not notif.is_read %}fw-semibold{% endif %}" style="font-size: 0.95rem;">{{ notif.message }}</p>
+                                <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="d-flex gap-1">
+                            {% if not notif.is_read %}
+                            <form method="POST" action="{{ url_for('main.mark_notification_read', notification_id=notif.id) }}">
+                                <button type="submit" class="btn btn-link p-0 text-primary" title="Mark Read">
+                                    <i class="bi bi-check-circle fs-5"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            
+                            <form method="POST" action="{{ url_for('main.delete_notification', notification_id=notif.id) }}">
+                                <button type="submit" class="btn btn-link p-0 text-danger" title="Delete Alert">
+                                    <i class="bi bi-trash fs-5"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-bell-slash fs-1 mb-2 d-block"></i>
+                    Your inbox is completely clear! No alerts generated.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* CSS highlight for unread notifications */
+    .bg-light-glow {
+        background-color: var(--primary-glow) !important;
+    }
+</style>
+{% endblock %}
