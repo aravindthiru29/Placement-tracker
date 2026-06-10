@@ -122,41 +122,6 @@
                         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal-{{ proj.id }}">
                             <i class="bi bi-pencil-square me-1"></i> Review
                         </button>
-                        
-                        <!-- Review Modal -->
-                        <div class="modal fade" id="reviewModal-{{ proj.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content bg-secondary text-primary border-color">
-                                    <div class="modal-header border-color">
-                                        <h5 class="modal-title font-outfit fw-bold">Review Project: {{ proj.project_name }}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <form method="POST" action="{{ url_for('main.review_project', project_id=proj.id) }}">
-                                        {{ feedback_form.hidden_tag() }}
-                                        <div class="modal-body">
-                                            <p class="small text-muted">Submit review status and notes for <b>{{ proj.user.name }}</b>.</p>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Action Status</label>
-                                                <select name="status" class="form-select">
-                                                    <option value="Completed">Approve & Complete (100% Score)</option>
-                                                    <option value="In Progress">Reject & Request Changes (Back to In Progress)</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Review Feedback</label>
-                                                <textarea name="feedback" class="form-control" rows="3" placeholder="Provide feedback to the member (minimum 5 characters)..." minlength="5" required></textarea>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer border-color">
-                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-primary">Submit Review</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -220,29 +185,6 @@
                                 <i class="bi bi-trash"></i> Delete
                             </button>
                         </div>
-
-                        <!-- Delete User Modal -->
-                        <div class="modal fade" id="deleteUserModal-{{ item.user.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content bg-secondary text-primary border-color">
-                                    <div class="modal-header border-color">
-                                        <h5 class="modal-title font-outfit fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete User</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body text-start">
-                                        <p class="mb-2 text-primary">Are you sure you want to delete <strong>{{ item.user.name }}</strong> ({{ item.user.email }})?</p>
-                                        <p class="text-danger small mb-0"><i class="bi bi-info-circle me-1"></i> This action is permanent and will delete all their LeetCode records, Aptitude logs, GitHub progress, monthly projects, and notifications.</p>
-                                    </div>
-                                    <div class="modal-footer border-color">
-                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <form method="POST" action="{{ url_for('main.delete_user', user_id=item.user.id) }}" class="d-inline">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-danger">Confirm Delete</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </td>
                 </tr>
                 {% else %}
@@ -254,6 +196,72 @@
         </table>
     </div>
 </div>
+
+<!-- Project Review Modals (Outside Table Hierarchy) -->
+{% if pending_projects %}
+    {% for proj in pending_projects %}
+    <div class="modal fade" id="reviewModal-{{ proj.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-secondary text-primary border-color">
+                <div class="modal-header border-color">
+                    <h5 class="modal-title font-outfit fw-bold">Review Project: {{ proj.project_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ url_for('main.review_project', project_id=proj.id) }}">
+                    {{ feedback_form.hidden_tag() }}
+                    <div class="modal-body">
+                        <p class="small text-muted">Submit review status and notes for <b>{{ proj.user.name }}</b>.</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Action Status</label>
+                            <select name="status" class="form-select">
+                                <option value="Completed">Approve & Complete (100% Score)</option>
+                                <option value="In Progress">Reject & Request Changes (Back to In Progress)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Review Feedback</label>
+                            <textarea name="feedback" class="form-control" rows="3" placeholder="Provide feedback to the member (minimum 5 characters)..." minlength="5" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-color">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Review</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- User Deletion Modals (Outside Table Hierarchy) -->
+{% if member_scores %}
+    {% for item in member_scores %}
+    <div class="modal fade" id="deleteUserModal-{{ item.user.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-secondary text-primary border-color">
+                <div class="modal-header border-color">
+                    <h5 class="modal-title font-outfit fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <p class="mb-2 text-primary">Are you sure you want to delete <strong>{{ item.user.name }}</strong> ({{ item.user.email }})?</p>
+                    <p class="text-danger small mb-0"><i class="bi bi-info-circle me-1"></i> This action is permanent and will delete all their LeetCode records, Aptitude logs, GitHub progress, monthly projects, and notifications.</p>
+                </div>
+                <div class="modal-footer border-color">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="POST" action="{{ url_for('main.delete_user', user_id=item.user.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
