@@ -212,9 +212,37 @@
                     <td>{{ item.scores.github }} <small class="text-muted">({{ item.scores.github_points }} pts)</small></td>
                     <td>{{ item.scores.project }} <small class="text-muted">({{ item.scores.project_percentage }}%)</small></td>
                     <td class="text-end">
-                        <a href="{{ url_for('main.reports', type='member', member_id=item.user.id) }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-file-earmark-bar-graph"></i> Report
-                        </a>
+                        <div class="d-inline-flex gap-2">
+                            <a href="{{ url_for('main.reports', type='member', member_id=item.user.id) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-file-earmark-bar-graph"></i> Report
+                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteUserModal-{{ item.user.id }}">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </div>
+
+                        <!-- Delete User Modal -->
+                        <div class="modal fade" id="deleteUserModal-{{ item.user.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content bg-secondary text-primary border-color">
+                                    <div class="modal-header border-color">
+                                        <h5 class="modal-title font-outfit fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete User</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-start">
+                                        <p class="mb-2 text-primary">Are you sure you want to delete <strong>{{ item.user.name }}</strong> ({{ item.user.email }})?</p>
+                                        <p class="text-danger small mb-0"><i class="bi bi-info-circle me-1"></i> This action is permanent and will delete all their LeetCode records, Aptitude logs, GitHub progress, monthly projects, and notifications.</p>
+                                    </div>
+                                    <div class="modal-footer border-color">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <form method="POST" action="{{ url_for('main.delete_user', user_id=item.user.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 {% else %}

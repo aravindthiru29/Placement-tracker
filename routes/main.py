@@ -503,3 +503,21 @@ def delete_notification(notification_id):
     db.session.commit()
     flash('Notification deleted.', 'success')
     return redirect(url_for('main.notifications'))
+
+@main_bp.route('/user/delete/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if current_user.role != 'admin':
+        abort(403)
+        
+    user = User.query.get_or_404(user_id)
+    
+    if user.id == current_user.id:
+        flash("You cannot delete your own administrator account.", "danger")
+        return redirect(url_for('main.dashboard'))
+        
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash(f"User '{user.name}' has been successfully deleted from the system.", "success")
+    return redirect(url_for('main.dashboard'))
