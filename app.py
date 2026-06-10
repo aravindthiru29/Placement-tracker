@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 from config import Config
 from models import db, User, LeetCodeProgress, AptitudeProgress, GitHubProgress, MonthlyProject, Notification
 from datetime import date, datetime, timedelta
@@ -8,6 +9,10 @@ from datetime import date, datetime, timedelta
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    # Initialize CSRF Protection
+    csrf = CSRFProtect()
+    csrf.init_app(app)
     
     # Initialize Database
     db.init_app(app)

@@ -11,6 +11,7 @@
         <div class="d-flex gap-2">
             {% if unread_notifs %}
             <form method="POST" action="{{ url_for('main.mark_all_notifications_read') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-envelope-open me-1"></i> Mark All as Read</button>
             </form>
             {% endif %}
@@ -40,6 +41,7 @@
                         <div class="d-flex gap-1">
                             {% if not notif.is_read %}
                             <form method="POST" action="{{ url_for('main.mark_notification_read', notification_id=notif.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-link p-0 text-primary" title="Mark Read">
                                     <i class="bi bi-check-circle fs-5"></i>
                                 </button>
@@ -47,6 +49,7 @@
                             {% endif %}
                             
                             <form method="POST" action="{{ url_for('main.delete_notification', notification_id=notif.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-link p-0 text-danger" title="Delete Alert">
                                     <i class="bi bi-trash fs-5"></i>
                                 </button>
